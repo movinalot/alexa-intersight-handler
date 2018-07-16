@@ -11,7 +11,7 @@ Author:
 from __future__ import print_function
 
 # Import the intersight functions
-import intersight_operations
+import intersight_hx_operations
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -75,7 +75,7 @@ def get_faults(intent, session):
     session_attributes = {}
     reprompt_text = None
 
-    speech_output = intersight_operations.get_faults()
+    speech_output = intersight_hx_operations.get_faults()
     should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
