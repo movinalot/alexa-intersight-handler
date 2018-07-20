@@ -50,10 +50,9 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to the Alexa Skill for Cisco Intersight." \
-                    "You can say things like, What is my fault count?" \
-                    "Or you can say Provision an HX cluster." \
-                    "Or you can say Associate a Service Profile."
+    speech_output = "Welcome to the Alexa Skill for Cisco Intersight " \
+                    "You can say things like, What is my fault count " \
+                    "Or you can say What is the state of my HX cluster"
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Did you want to do something with, or know something about Cisco Intersight?"
@@ -76,6 +75,17 @@ def get_faults(intent, session):
     reprompt_text = None
 
     speech_output = intersight_hx_operations.get_faults()
+    should_end_session = True
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
+# Get HyperFlex Config Status
+def get_hx_config_state(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+
+    speech_output = intersight_hx_operations.get_hx_config_state()
     should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
@@ -113,6 +123,8 @@ def on_intent(intent_request, session):
     # Dispatch to skill's intent handlers
     if intent_name == "GetFaults":         # Entry point for the GetFaults intent
         return get_faults(intent, session)
+    if intent_name == "GetHXConfigState":
+        return get_hx_config_state(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
