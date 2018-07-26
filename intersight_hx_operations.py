@@ -47,7 +47,7 @@ def get_alarms():
 
 
 def get_hx_config_state():
-    """Deploy HX cluster via the Intersight API."""
+    """Get HX cluster configuration state via the Intersight API."""
 
     try:
         handle = hyperflex_cluster_profile_api.HyperflexClusterProfileApi(api_instance)
@@ -67,6 +67,34 @@ def get_hx_config_state():
     return message
 
 
+def deploy_hx_cluster():
+    """Deploy HX cluster via the Intersight API."""
+
+    try:
+        handle = hyperflex_cluster_profile_api.HyperflexClusterProfileApi(api_instance)
+        kwargs = dict(filter="Name eq 'sjc07-r13-hx-edge-4'")
+        response = handle.hyperflex_cluster_profiles_get(**kwargs)
+
+        response_dict = response.to_dict()
+        if response_dict.get('results'):
+            # get the 1st results object if a list was returned
+            response_dict = response_dict['results'][0]
+            if response_dict['config_context']['config_state'] == 'Associated':
+                message = 'Your Intersight HyperFlex cluster is already deployed and in the ' + response_dict['config_context']['config_state'] + ' state'
+            else:   # config_state != 'Associated'
+                moid = response_dict['moid']
+                api_body = dict(Action='Deploy')
+                patch_response = handle.hyperflex_cluster_profiles_moid_patch(moid, api_body)
+                message = 'Your Intersight HyperFlex cluster is now being deployed, ask me later for the HyperFlex cluster configuration state'
+
+    except Exception as err:
+        print(err)
+        message = ("There was an error connecting to or retrieving information from Cisco Intersight")
+
+    return message
+
+
 if __name__ == "__main__":
     print(get_alarms())
     print(get_hx_config_state())
+    print(deploy_hx_cluster())
