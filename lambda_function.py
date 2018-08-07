@@ -3,6 +3,24 @@ Name:
     lambda_function.py
 Purpose:
     lambda function for the Intersight Skill
+    Feature 1:
+    Q: What is the health of my <location> HX cluster? (e.g., Atlanta)
+    A: Your <location> cluster is currently <overall health>.  (e.g., Atlanta, healthy/reporting alarms)
+        If reporting alarms, we could then report counts – “reporting alarms with <x> critical alerts and <y> warnings”
+ 
+    Feature 2:
+    Q: What is the configuration status of my <location> HX cluster?
+    A: Your <location> cluster is <status> (assigned/associated)
+        If status is assigned, she can go on to say “is assigned and ready for deployment”
+ 
+    Above could be switched to what the team requested, although I don’t think it’s a big change either way:
+    Q: List my non deployed clusters (back-end reports a list of assigned but not associated clusters)
+    A: Here is a list of clusters that are not deployed…
+ 
+    Feature 3:
+    Q: Deploy the <location> cluster.
+    A: Deployment has been requested on your <location> cluster.
+        Further enhancements can be done on the status question to get “live” updates as the cluster deploys.
 Author:
     John McDonough (jomcdono@cisco.com)
     Cisco Systems, Inc.
