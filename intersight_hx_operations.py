@@ -15,10 +15,10 @@ from intersight.apis import hyperflex_cluster_api
 
 api_instance = IntersightApiClient(
     host="https://intersight.com/api/v1",
-#    private_key="soperspam1_ucstechtalks_SecretKey.txt",
-    private_key="/Users/dsoper/Downloads/SSOSecretKey.txt",
-#    api_key_id="5a3404ac3768393836093cab/5b02fa7e6d6c356772394170/5b02fad36d6c356772394449"
-    api_key_id="596cc79e5d91b400010d15ad/596cc7945d91b400010d154e/5b6275df3437357030a7795f"
+    private_key="soperspam1_ucstechtalks_SecretKey.txt",
+#    private_key="/Users/dsoper/Downloads/SSOSecretKey.txt",
+    api_key_id="5a3404ac3768393836093cab/5b02fa7e6d6c356772394170/5b02fad36d6c356772394449"
+#    api_key_id="596cc79e5d91b400010d15ad/596cc7945d91b400010d154e/5b6275df3437357030a7795f"
 )
 
 
