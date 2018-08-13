@@ -6,21 +6,14 @@ Purpose:
     Feature 1:
     Q: What is the health of my <location> HX cluster? (e.g., Atlanta)
     A: Your <location> cluster is currently <overall health>.  (e.g., Atlanta, healthy/reporting alarms)
-        If reporting alarms, we could then report counts – “reporting alarms with <x> critical alerts and <y> warnings”
- 
+
     Feature 2:
     Q: What is the configuration status of my <location> HX cluster?
     A: Your <location> cluster is <status> (assigned/associated)
-        If status is assigned, she can go on to say “is assigned and ready for deployment”
- 
-    Above could be switched to what the team requested, although I don’t think it’s a big change either way:
-    Q: List my non deployed clusters (back-end reports a list of assigned but not associated clusters)
-    A: Here is a list of clusters that are not deployed…
- 
+
     Feature 3:
     Q: Deploy the <location> cluster.
     A: Deployment has been requested on your <location> cluster.
-        Further enhancements can be done on the status question to get “live” updates as the cluster deploys.
 Author:
     John McDonough (jomcdono@cisco.com)
     Cisco Systems, Inc.
@@ -68,9 +61,9 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to the Alexa Skill for Cisco Intersight " \
-                    "You can say things like, What is my fault count " \
-                    "Or you can say What is the state of my HX cluster"
+    speech_output = "Welcome to the Alexa Skill for Cisco Intersight.  " \
+                    "You can say things like, What is the health of my Atlanta cluster.  " \
+                    "Or you can say What is the configuration state of my Atlanta cluster"
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Did you want to do something with, or know something about Cisco Intersight?"
@@ -87,12 +80,12 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-# Get Intersight Faults
-def get_alarms(intent, session):
+# Get Intersight Information (health)
+def get_health(intent, session):
     session_attributes = {}
     reprompt_text = None
 
-    speech_output = intersight_hx_operations.get_alarms()
+    speech_output = intersight_hx_operations.get_health(intent['slots']['name']['value'])
     should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
@@ -103,7 +96,7 @@ def get_hx_config_state(intent, session):
     session_attributes = {}
     reprompt_text = None
 
-    speech_output = intersight_hx_operations.get_hx_config_state()
+    speech_output = intersight_hx_operations.get_hx_config_state(intent['slots']['name']['value'])
     should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
@@ -114,7 +107,7 @@ def deploy_hx_cluster(intent, session):
     session_attributes = {}
     reprompt_text = None
 
-    speech_output = intersight_hx_operations.deploy_hx_cluster()
+    speech_output = intersight_hx_operations.deploy_hx_cluster(intent['slots']['name']['value'])
     should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
@@ -150,8 +143,8 @@ def on_intent(intent_request, session):
     intent_name = intent_request['intent']['name']
 
     # Dispatch to skill's intent handlers
-    if intent_name == "GetFaults":         # Entry point for the GetFaults intent
-        return get_alarms(intent, session)
+    if intent_name == "GetHealth":         # Entry point for the GetInfo intent
+        return get_health(intent, session)
     elif intent_name == "GetHXConfigState":
         return get_hx_config_state(intent, session)
     elif intent_name == "DeployHXCluster":
