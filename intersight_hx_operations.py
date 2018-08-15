@@ -23,7 +23,10 @@ api_instance = IntersightApiClient(
 
 
 def get_alarms(moid):
-    """Get Intersight alarms via the Intersight API."""
+    """
+    Get Intersight alarms via the Intersight API.
+    Returns a string with the Critial and Warning alarms counts for the given MOID
+    """
 
     message = ''
     # GET Alarms
@@ -56,8 +59,43 @@ def get_alarms(moid):
     return message
 
 
+def get_health(cluster_name, print_name=True):
+    """
+    Get information including health state of the specified cluster.
+    Returns a string of healthy or with alarms counts for the given cluster name
+    """
+    message = ''
+    handle = hyperflex_cluster_api.HyperflexClusterApi(api_instance)
+    kwargs = dict(filter="ClusterName eq '%s' or \
+        Tags/any(t:t/Key eq 'Location' and t/Value eq'%s')" % (cluster_name, cluster_name))
+    try:
+        response = handle.hyperflex_clusters_get(**kwargs)
+    except Exception as err:
+        print(err)
+        message = ("There was an error connecting to or retrieving information from Cisco Intersight")
+
+    response_dict = response.to_dict()
+    if response_dict.get('results'):
+        response_dict = response_dict['results'][0]   # use the 1st result returned
+        if print_name:
+            message = "Your %s cluster is " % cluster_name
+        if response_dict['flt_aggr'] == 0:
+            message += 'healthy.  '
+        else:   # alarms are present
+            message += "reporting alarms.  The %s cluster has " % cluster_name
+            message += get_alarms(response_dict['moid'])
+            message += '.  '
+    else:
+        message = "Sorry, I could not find a cluster named %s" % cluster_name
+
+    return message
+
+
 def get_hx_config_state(cluster_name):
-    """Get HX cluster configuration state via the Intersight API."""
+    """
+    Get HX cluster configuration state and health via the Intersight API.
+    Returns a string with state and health including any alarms present
+    """
 
     handle = hyperflex_cluster_profile_api.HyperflexClusterProfileApi(api_instance)
     kwargs = dict(filter="Name eq '%s' or \
@@ -74,9 +112,17 @@ def get_hx_config_state(cluster_name):
         # get the 1st results object if a list was returned
         response_dict = response_dict['results'][0]
         config_state = response_dict['config_context']['config_state']
-        message = "Your %s cluster is currently in the %s state " % (cluster_name, config_state)
-        if config_state == 'Assigned':
-            message += 'and is ready to be deployed'
+        message = "Your %s cluster " % cluster_name
+        if config_state == 'Associated':
+            message += 'is deployed and '
+            message += get_health(cluster_name, print_name=False)
+            message += '.  '
+        elif config_state == 'Assigned':
+            message += 'is ready for deployment.  '
+        elif config_state == 'Configuring':
+            message += 'is currently being deployed.  '
+        else:
+            message += 'needs additional configuration before being deployed.  '
 
     return message
 
@@ -104,34 +150,29 @@ def deploy_hx_cluster(cluster_name):
             moid = response_dict['moid']
             api_body = dict(Action='Deploy')
             response = handle.hyperflex_cluster_profiles_moid_patch(moid, api_body)
-            message = "Your %s cluster is now being deployed.  \
-                Ask Intersight what is the configuration status of my %s cluster to get current deployment status" % (cluster_name, cluster_name)
+            message = "Your %s cluster is now being deployed.  "\
+                "Ask Intersight, what is the status of my %s cluster to get current deployment status" % (cluster_name, cluster_name)
 
     return message
 
 
-def get_health(cluster_name):
+def get_datacenter_info():
     """Get information including health state of the specified cluster."""
-    handle = hyperflex_cluster_api.HyperflexClusterApi(api_instance)
-    kwargs = dict(filter="ClusterName eq '%s' or \
-        Tags/any(t:t/Key eq 'Location' and t/Value eq'%s')" % (cluster_name, cluster_name))
+    handle = hyperflex_cluster_profile_api.HyperflexClusterProfileApi(api_instance)
+    message = ''
     try:
-        response = handle.hyperflex_clusters_get(**kwargs)
-        response_dict = response.to_dict()
-        if response_dict.get('results'):
-            message = "Your %s cluster is currently " % cluster_name
-            response_dict = response_dict['results'][0]   # use the 1st result returned
-            if response_dict['flt_aggr'] == 0:
-                message += 'healthy'
-            else:   # alarms are present
-                message += "reporting alarms.  The %s cluster has " % cluster_name
-                message += get_alarms(response_dict['moid'])
-        else:
-            message = "Sorry, I could not find a cluster named %s" % cluster_name
-
+        response = handle.hyperflex_cluster_profiles_get()
     except Exception as err:
         print(err)
         message = ("There was an error connecting to or retrieving information from Cisco Intersight")
+
+    response_dict = response.to_dict()
+    if response_dict.get('results'):
+        for cluster in response_dict['results']:
+            cluster_name = cluster['name']
+            message += get_hx_config_state(cluster_name)
+    else:
+        message = 'Sorry, I could not find any information for your datacenter clusters'
 
     return message
 
@@ -139,8 +180,9 @@ def get_health(cluster_name):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    args = parser.add_argument('-n', '--name', required=True, help='Name of the HyperFlex cluster to query')
+    args = parser.add_argument('-n', '--name', default='Atlanta', help='Name of the HyperFlex cluster to query')
     args = parser.parse_args()
+    print(get_datacenter_info())
     print(get_health(args.name))
     print(get_hx_config_state(args.name))
     print(deploy_hx_cluster(args.name))

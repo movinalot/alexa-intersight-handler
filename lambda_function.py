@@ -26,6 +26,7 @@ import intersight_hx_operations
 
 # --------------- Helpers that build all of the responses ----------------------
 
+
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     return {
         'outputSpeech': {
@@ -62,14 +63,16 @@ def get_welcome_response():
     session_attributes = {}
     card_title = "Welcome"
     speech_output = "Welcome to the Alexa Skill for Cisco Intersight.  " \
-                    "You can say things like, What is the health of my Atlanta cluster.  " \
-                    "Or you can say What is the configuration state of my Atlanta cluster"
+                    "You can say things like, How are my data centers?  " \
+                    "Or you can ask me to perform an action like deploying a cluster.  " \
+                    "For example, Deploy my Atlanta cluster.  "
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Did you want to do something with, or know something about Cisco Intersight?"
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
+
 
 def handle_session_end_request():
     card_title = "Session Ended"
@@ -80,38 +83,6 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-# Get Intersight Information (health)
-def get_health(intent, session):
-    session_attributes = {}
-    reprompt_text = None
-
-    speech_output = intersight_hx_operations.get_health(intent['slots']['name']['value'])
-    should_end_session = True
-
-    return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
-
-# Get HyperFlex Config Status
-def get_hx_config_state(intent, session):
-    session_attributes = {}
-    reprompt_text = None
-
-    speech_output = intersight_hx_operations.get_hx_config_state(intent['slots']['name']['value'])
-    should_end_session = True
-
-    return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
-
-# Deploy HyperFlex Cluster
-def deploy_hx_cluster(intent, session):
-    session_attributes = {}
-    reprompt_text = None
-
-    speech_output = intersight_hx_operations.deploy_hx_cluster(intent['slots']['name']['value'])
-    should_end_session = True
-
-    return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
 
 # --------------- Events ------------------
 
@@ -142,19 +113,29 @@ def on_intent(intent_request, session):
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
 
+    session_attributes = {}
+    reprompt_text = None
+
     # Dispatch to skill's intent handlers
-    if intent_name == "GetHealth":         # Entry point for the GetInfo intent
-        return get_health(intent, session)
+    if intent_name == "GetDCInfo":         # Entry point for the GetInfo intent
+        speech_output = intersight_hx_operations.get_datacenter_info()
+    elif intent_name == "GetHealth":
+        speech_output = intersight_hx_operations.get_health(intent['slots']['name']['value'])
     elif intent_name == "GetHXConfigState":
-        return get_hx_config_state(intent, session)
+        speech_output = intersight_hx_operations.get_hx_config_state(intent['slots']['name']['value'])
     elif intent_name == "DeployHXCluster":
-        return deploy_hx_cluster(intent, session)
+        speech_output = intersight_hx_operations.deploy_hx_cluster(intent['slots']['name']['value'])
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
     else:
         raise ValueError("Invalid intent")
+
+    should_end_session = True
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
 
 def on_session_ended(session_ended_request, session):
